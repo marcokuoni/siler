@@ -6,7 +6,7 @@ use Closure;
 use Doctrine\Common\Annotations\AnnotationException;
 use Doctrine\Common\Annotations\AnnotationRegistry;
 use Exception;
-use GraphQL\Error\Debug;
+use GraphQL\Error\DebugFlag;
 use GraphQL\Executor\Executor;
 use GraphQL\Executor\Promise\Adapter\SyncPromiseAdapter;
 use GraphQL\Executor\Promise\Promise;
@@ -19,9 +19,12 @@ use GraphQL\Type\Definition\ObjectType;
 use GraphQL\Type\Definition\ResolveInfo;
 use GraphQL\Type\Definition\Type;
 use GraphQL\Type\Schema;
+use GraphQL\Validator\DocumentValidator;
+use GraphQL\Validator\Rules\ValidationRule;
 use Laminas\Diactoros\Response\JsonResponse;
 use Psr\Http\Message\ServerRequestInterface;
 use Ratchet\Server\IoServer;
+use ReflectionException;
 use Siler\Arr;
 use Siler\Container;
 use Siler\Diactoros;
@@ -66,7 +69,7 @@ const SUBSCRIPTIONS_ENDPOINT = 'graphql_subscriptions_endpoint';
  * @param int $level GraphQL debug level
  * @see https://webonyx.github.io/graphql-php/error-handling
  */
-function debug(int $level = Debug::INCLUDE_DEBUG_MESSAGE): void
+function debug(int $level = DebugFlag::INCLUDE_DEBUG_MESSAGE): void
 {
     Container\set(GRAPHQL_DEBUG, $level);
 }
@@ -104,7 +107,6 @@ function init(Schema $schema, $rootValue = null, $context = null, string $input 
  */
 function input(string $input = 'php://input'): array
 {
-    /** @var string|null $content_type */
     $content_type = Request\header('Content-Type');
 
     if ($content_type !== null && preg_match('#application/json(;charset=utf-8)?#', $content_type)) {
@@ -153,7 +155,8 @@ function request(string $input = 'php://input'): GraphQLRequest
 
     $query = array_get_str($body, 'query');
     $vars = array_get_arr($body, 'variables', []);
-    $op_name = array_get_str($body, 'operationName', '');
+    /** @var string|null $op_name */
+    $op_name = array_get($body, 'operationName');
 
     return new GraphQLRequest($query, $vars, $op_name);
 }
@@ -200,7 +203,7 @@ function promise_execute(PromiseAdapter $adapter, Schema $schema, array $input, 
     $query = array_get($input, 'query');
     /** @var array $variables */
     $variables = array_get($input, 'variables');
-    /** @var string $operation_name */
+    /** @var string|null $operation_name */
     $operation_name = array_get($input, 'operationName');
 
     return GraphQL::promiseToExecute($adapter, $schema, $query, $rootValue, $context, $variables, $operation_name);
@@ -230,7 +233,7 @@ function psr7(Schema $schema): Closure
  * @param string $typeDefs
  * @param array<string, array<string, mixed>> $resolvers
  * @param callable|null $typeConfigDecorator
- * @param array $options
+ * @param bool[] $options
  * @return Schema
  */
 function schema(string $typeDefs, array $resolvers = [], ?callable $typeConfigDecorator = null, array $options = []): Schema
@@ -245,6 +248,8 @@ function schema(string $typeDefs, array $resolvers = [], ?callable $typeConfigDe
 /**
  * Sets a Siler's default field resolver based on the given $resolvers array.
  *
+ * @template Source
+ * @template Context
  * @param array<string, array<string, mixed>> $resolvers
  * @return void
  */
@@ -252,15 +257,12 @@ function resolvers(array $resolvers): void
 {
     $resolver =
         /**
-         * @template Source
-         * @template Context
-         * @param mixed $source
-         * @psalm-param Source $source
-         * @param array $args
-         * @param mixed $context
-         * @psalm-param Context $context
+         * @param Source $source
+         * @param array<string, mixed> $args
+         * @param Context $context
          * @param ResolveInfo $info
          * @return mixed|null
+         * @throws ReflectionException
          */
         static function ($source, array $args, $context, ResolveInfo $info) use ($resolvers) {
             /** @var string|null $field_name */
@@ -284,21 +286,29 @@ function resolvers(array $resolvers): void
                 $resolver = $resolvers[$parent_type_name];
                 $value = null;
 
-                if (is_array($resolver)) {
-                    if (array_key_exists($field_name, $resolver)) {
+                if (\is_array($resolver)) {
+                    if (\array_key_exists($field_name, $resolver)) {
                         /** @var callable|mixed $value */
                         $value = $resolver[$field_name];
                     }
                 }
 
-                if (is_object($resolver)) {
-                    if (isset($resolver->{$field_name})) {
+                if (\is_object($resolver)) {
+                    $getter = sprintf('get%s', ucwords($field_name));
+                    if (method_exists($resolver, $getter)) {
+                        $reflectionGetter = new \ReflectionMethod($resolver, $getter);
+                        if ($reflectionGetter->isPublic()) {
+                            /** @var mixed $value */
+                            $value = $resolver->{$getter}($source, $args, $context, $info);
+                        }
+                    }
+                    if ($value === null && isset($resolver->{$field_name})) {
                         /** @var callable|mixed $value */
                         $value = $resolver->{$field_name};
                     }
                 }
 
-                if (is_callable($value)) {
+                if (\is_callable($value)) {
                     return $value($source, $args, $context, $info);
                 }
 
@@ -313,28 +323,22 @@ function resolvers(array $resolvers): void
 
     Executor::setDefaultFieldResolver(
     /**
-     * @template Source
-     * @template Context
-     * @param mixed $source
-     * @psalm-param Source $source
-     * @param array $args
-     * @param mixed $context
-     * @psalm-param Context $context
+     * @param Source $source
+     * @param array<string, mixed> $args
+     * @param Context $context
      * @param ResolveInfo $info
      * @return mixed|null
      */
         static function ($source, array $args, $context, ResolveInfo $info) use ($resolver) {
             $field_node = $info->fieldNodes[0];
-            /** @var NodeList $directive_defs */
             $directive_defs = $field_node->directives;
             /** @var array<string, callable(callable):callable> $directives */
             $directives = Container\get(DIRECTIVES, []);
 
-            /** @var DirectiveNode $directive */
             foreach ($directive_defs as $directive) {
                 $directive_name = $directive->name->value;
 
-                if (array_key_exists($directive_name, $directives)) {
+                if (\array_key_exists($directive_name, $directives)) {
                     $resolver = $directives[$directive_name]($resolver);
                 }
             }
@@ -450,7 +454,7 @@ function listen(string $eventName, callable $listener): void
  * @param array<Directive> $with_directives
  * @return Schema
  * @throws AnnotationException
- * @throws \ReflectionException
+ * @throws ReflectionException
  */
 function annotated(array $class_names, array $with_types = [], array $with_directives = []): Schema
 {
@@ -478,4 +482,16 @@ function annotated(array $class_names, array $with_types = [], array $with_direc
 
     $deannotator = new Deannotator($with_types, $with_directives);
     return $deannotator->deannotate($class_names);
+}
+
+/**
+ * Adds rule to list of global validation rules
+ *
+ * @param array<ValidationRule> $rules
+ */
+function validation_rules(array $rules): void
+{
+    foreach ($rules as $rule) {
+        DocumentValidator::addRule($rule);
+    }
 }

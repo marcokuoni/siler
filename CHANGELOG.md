@@ -1,18 +1,45 @@
+# 1.7.9
+- Container with lazy values/factories (thanks @gskierk)
+- GraphQL Validation Rules (thanks @gskierk)
+- Config module now using Laminas behind the scenes (thanks @gskierk)
+- Refactor path resolution, avoids depedency to the `$_SERVER['QUERY_STRING']`
+
+# 1.7.8
+- GraphQL Annotations for Subscriptions
+
+# 1.7.7
+- Allow Config to receive custom Parsers
+
+# 1.7.6
+- `nullableList` for GraphQL annotations
+
+# 1.7.5
+- Config module
+
+# 1.7.4
+- Fix route with URL encoded query strings reported at #354
+
 # 1.7.3
 - **GraphQL uploads & custom directives!**
 - **GraphQL annotations!**
-- Enums draft
+- GraphiQL
+- Enums
+- PHPUnit v9
+- GraphQL v14
+- Introducing Klass module with `Klass\unqualified_name`
+- Introducing Obj module with `Obj\patch`
+- Introducing `FromArray`, `ToArray` and `Patch`
+- Introducing IO module with `println`, `csv_to_array` and `fetch`
 - Fix #276 - GraphQL WebSocket client sub-protocol
-- PHPUnit 9
-- Better error message for `array_get`'s
+- Fix #289 - GraphQL Context on subscriptions (thanks @lemonbrain-mk)
 - `Siler\array_get_arr` type-safe array getter for arrays
 - `Str\starts_with`, `Str\ends_with` and `Str\contains`
 - `Str\snake_case` and `Str\camel_case` case converters
-- `Str\mb_ucfirst` and `Str\mb_lcfirst` (special thanks @enricodias & @williamokano).
-- Introducing Klass module with `Klass\unqualified_name`
-- Introducing Obj module with `Obj\patch`
-- Introducing traits with: `FromArray`, `ToArray` and `Patch`
-- Fix optional parameters for `Route\class_name`
+- `Str\mb_ucfirst` and `Str\mb_lcfirst` (thanks @enricodias & @williamokano)
+- `Prelude\Dispatcher` an Event Dispatcher implementing PSR-14 interfaces
+- **Breaking**: `Result` module now adheres to Rust's naming and drops `id`, `code` and `json` support.
+  - `Success` is now `Ok`
+  - `Failure` is now `Err`
 - **Breaking**: you should now explicitly use arrays (or any other type) for subscription's root and context values
 - **Breaking**: match doesn't return null anymore, you should provide an exhaust function
 

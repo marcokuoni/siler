@@ -1,3 +1,14 @@
+> ⚠️ Forked repo from [github leocavalcante/siler](https://github.com/leocavalcante/siler) as the original repository has been archived
+
+---
+
+> ⚠️ I'm afraid that I'm not being able to keep Siler up-to-date as it deserves, so it's repository has been archived.
+
+**As an alternative for Siler, something lightweight and simple that works as a library with Swoole out-of-the-box, I highly recommend Nano!
+Check it out: https://nano.hyperf.wiki/#/en/**
+
+---
+
 <p align="center">
     <br><br>
     <img src="siler.png" height="100"/>
@@ -15,7 +26,7 @@ Siler is a set of general purpose high-level abstractions aiming an API for decl
 
 * 💧 **Files and functions** as first-class citizens
 * 🔋 **Zero dependency**, everything is on top of PHP built-in functions
-* ⚡ **Blazing fast**, no additional overhead - [*benchmark A*](https://github.com/kenjis/php-framework-benchmark#results) and [*benchmark B*](https://qiita.com/prograti/items/01eac3d20f1447a7b2f9)
+* ⚡ **Blazing fast**, no additional overhead - [*benchmark 1*](https://github.com/kenjis/php-framework-benchmark#results), [*benchmark 2*](https://qiita.com/prograti/items/01eac3d20f1447a7b2f9) and [*benchmark 3*](https://github.com/the-benchmarker/web-frameworks)
 
 ## Use with [Swoole](https://www.swoole.co.uk/)
 
@@ -23,151 +34,132 @@ Flat files and plain-old PHP functions rocking on a production-grade, high-perfo
 
 [Read the tutorial.](https://siler.leocavalcante.com/swoole)
 
-## Getting Started
+## Getting started
 
 ### Installation
 
 ```bash
-$ composer require leocavalcante/siler
+composer require leocavalcante/siler
 ```
 
 That is it. Actually, Siler is a library, not a framework (maybe a micro-framework), the overall program flow of control is dictated by you. So, no hidden configs or predefined directory structures.
 
-### Hello World
+### Hello, World!
 
 ```php
-use function Siler\{Functional\puts, Route\get};
+use Siler\Functional as λ; // Just to be cool, don't use non-ASCII identifiers ;)
+use Siler\Route;
 
-get('/', puts('hello world'));
+Route\get('/', λ\puts('Hello, World!'));
 ```
 Nothing more, nothing less. You don't need even tell Siler to `run` or something like that (`puts` works like a lazily evaluated `echo`).
 
-As said before, Siler aims to use PHP files and functions as first-class citizens, so no Controllers here. If you want to call something more self-container instead of a Closure, you can simply give a PHP filename then Siler will require it for you.
+#### JSON
 
-<sub>index.php</sub>
 ```php
 use Siler\Route;
-
-Route\get('/', 'pages/home.php');
-```
-
-<sub>pages/home.php</sub>
-```php
-echo 'Hello World';
-```
-
-### Namespaces
-
-Siler doesn't try to be a fully-featured framework - don't even aim to be a framework - instead it embraces component based architectures and offers helper functions to work with this components under PHP namespaces.
-
-#### Twig
-
-Is one of the libraries that has helpers functions making work with templates quite simple.
-
-```bash
-$ composer require twig/twig
-```
-
-```php
-use Siler\Functional as F;
-use Siler\Route;
-use Siler\Twig;
-
-Twig\init('path/to/templates');
-Route\get('/', F\puts(Twig\render('template.twig')));
-```
-
-#### Dotenv
-
-Siler also brings helper functions for [vlucas/phpdotenv](https://github.com/vlucas/phpdotenv), so you can easily acomplish [twelve-factor](https://12factor.net/) apps.
-
-```bash
-$ composer require vlucas/phpdotenv
-```
-
-<sub>.env</sub>
-```ini
-TWIG_DEBUG=true
-```
-
-<sub>index.php</sub>
-```php
-use Siler\Dotenv;
-use Siler\Route;
-use Siler\Twig;
-
-Dotenv\init('path/to/.env');
-Twig\init('path/to/templates', 'path/to/templates/cache', Dotenv\env('TWIG_DEBUG'));
-Route\get('/', 'pages/home.php');
-```
-
-#### Monolog
-
-Monolog sends your logs to files, sockets, inboxes, databases and various web services. See the complete list of handlers [here](https://github.com/Seldaek/monolog/blob/master/doc/02-handlers-formatters-processors.md#handlers). Special handlers allow you to build advanced logging strategies.
-
-```bash
-$ composer require monolog/monolog
-```
-
-```php
-use Siler\Monolog as Log;
-
-Log\handler(Log\stream(__DIR__.'/siler.log'));
-
-Log\debug('debug', ['level' => 'debug']);
-Log\info('info', ['level' => 'info']);
-Log\notice('notice', ['level' => 'notice']);
-Log\warning('warning', ['level' => 'warning']);
-Log\error('error', ['level' => 'error']);
-Log\critical('critical', ['level' => 'critical']);
-Log\alert('alert', ['level' => 'alert']);
-Log\emergency('emergency', ['level' => 'emergency']);
-```
-
-#### GraphQL
-
-[A query language for your API](http://graphql.org/). Thanks to webonyx/graphql-php you can build you Schema from a
-type definitions string and thanks to Siler you can tie them to resolvers:
-
-```bash
-$ composer require webonyx/graphql-php
-```
-
-<sub>schema.graphql</sub>
-```graphql
-type Query {
-  message: String
-}
-
-type Mutation {
-  sum(a: Int, b: Int): Int
-}
-```
-
-<sub>index.php</sub>
-```php
-use Siler\GraphQL;
 use Siler\Http\Response;
 
-// Enable CORS for GraphiQL
-Response\header('Access-Control-Allow-Origin', '*');
-Response\header('Access-Control-Allow-Headers', 'content-type');
-
-$typeDefs = file_get_contents('path/to/schema.graphql');
-
-$resolvers = [
-    'Query' => [
-        'message' => 'foo',
-    ],
-    'Mutation' => [
-        'sum' => function ($root, $args) {
-            return $args['a'] + $args['b'];
-        },
-    ],
-];
-
-GraphQL\init(GraphQL\schema($typeDefs, $resolvers));
+Route\get('/', fn() => Response\json(['message' => 'Hello, World!']));
 ```
 
----
-MIT &copy; 2020
+The `Response\json` function will automatically add `Content-type: application/json` in the response headers.
+
+### Swoole
+
+Siler provides first-class support for Swoole. You can regularly use `Route`, `Request` and `Response` modules for a Swoole HTTP server.
+
+```php
+use Siler\Http\Response;
+use Siler\Route;
+use Siler\Swoole;
+
+$handler = function () {
+    Route\get('/', fn() => Response\json('Hello, World!'));
+};
+
+$port = 8000;
+echo "Listening on port $port\n";
+Swoole\http($handler, $port)->start();
+```
+
+### GraphQL
+
+Install peer-dependency:
+
+```bash
+composer require webonyx/graphql-php
+```
+
+#### Schema-first
+
+```graphql
+type Query {
+    hello: String
+}
+```
+
+```php
+use Siler\Route;
+use Siler\GraphQL;
+
+$type_defs = file_get_contents(__DIR__ . '/schema.graphql');
+$resolvers = [
+    'Query' => [
+        'hello' => fn ($root, $args, $context, $info) => 'Hello, World!'
+    ]
+];
+
+$schema = GraphQL\schema($type_defs, $resolvers);
+
+Route\post('/graphql', fn() => GraphQL\init($schema));
+```
+
+#### Code-first
+
+Another peer-dependency:
+
+```bash
+composer require doctrine/annotations
+```
+
+Then:
+
+```php
+/**
+ * @\Siler\GraphQL\Annotation\ObjectType()
+ */
+final class Query
+{
+    /**
+     * @\Siler\GraphQL\Annotation\Field()
+     */
+    public static function hello($root, $args, $context, $info): string
+    {
+        return 'Hello, World!';
+    }
+}
+```
+
+```php
+use Siler\GraphQL;
+use Siler\Route;
+
+$schema = GraphQL\annotated([Query::class]);
+
+Route\post('/graphql', fn() => GraphQL\init($schema));
+```
+
+Object type name will be guessed from class name, same for field name, and it's return type (i.e.: PHP `string` scalar `===` GraphQL `String` scalar).
+
+## What is next?
+
+- [Documentation](https://siler.leocavalcante.dev/)
+- [Examples](https://github.com/siler-examples)
+
+## License
+
+[![License](http://img.shields.io/:License-MIT-blue.svg?style=flat-square)](https://github.com/leocavalcante/siler/blob/master/LICENSE)
+
+- **[MIT license](http://opensource.org/licenses/mit-license.php)**
+- Copyright 2020 © <a href="https://leocavalcante.dev" target="_blank">LC</a>

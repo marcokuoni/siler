@@ -18,14 +18,11 @@ const DEFAULT_STRATIGILITY_PIPELINE = 'default_stratigility_pipeline';
  *
  * @param ServerRequestInterface $request The PSR-7 request.
  * @param string $name The pipeline name.
- *
- * @return Closure
- *
- * @return Closure(callable):Closure(array):ResponseInterface
+ * @return Closure(callable(ServerRequestInterface, array<array-key, mixed>):ResponseInterface):Closure
  */
 function process(ServerRequestInterface $request, string $name = DEFAULT_STRATIGILITY_PIPELINE): Closure
 {
-    /** @var MiddlewarePipe|null $pipeline */
+    /** @var mixed $pipeline */
     $pipeline = Container\get($name);
 
     if ($pipeline === null || !($pipeline instanceof MiddlewarePipe)) {
@@ -81,7 +78,7 @@ function pipe($middleware, string $name = DEFAULT_STRATIGILITY_PIPELINE): Middle
  */
 function handle(ServerRequestInterface $request, string $name = DEFAULT_STRATIGILITY_PIPELINE): ResponseInterface
 {
-    /** @var MiddlewarePipe|null $pipeline */
+    /** @var mixed $pipeline */
     $pipeline = Container\get($name);
 
     if ($pipeline === null || !($pipeline instanceof MiddlewarePipe)) {

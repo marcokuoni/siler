@@ -91,20 +91,19 @@ class SubscriptionsManager
      */
     public function handleConnectionInit(SubscriptionsConnection $conn, ?array $message = null): void
     {
+        $response = [
+            'type' => GQL_CONNECTION_ACK,
+            'payload' => []
+        ];
+
         try {
             $this->connStorage[$conn->key()] = [];
-
-            $response = [
-                'type' => GQL_CONNECTION_ACK,
-                'payload' => []
-            ];
-
             /** @var array|mixed $context */
             $context = $this->callListener(ON_CONNECT, [array_get($message, 'payload', []), $this->context]);
 
             if (is_array($context) && is_array($this->context)) {
                 $this->context = array_merge($this->context, $context);
-            } else if (is_array($context) && $this->context === null) {
+            } elseif (is_array($context) && $this->context === null) {
                 $this->context = $context;
             }
         } catch (Exception $e) {
@@ -116,7 +115,6 @@ class SubscriptionsManager
             $conn->send(Json\encode($response));
         }
     }
-
 
     /**
      * @param SubscriptionsConnection $conn
@@ -152,7 +150,7 @@ class SubscriptionsManager
                 $conn_subs = array_key_exists($conn->key(), $this->connStorage)
                     ? $this->connStorage[$conn->key()]
                     : [];
-                $conn_subs[strval($data['id'])] = $data;
+                $conn_subs[(string)$data['id']] = $data;
                 $this->connStorage[$conn->key()] = $conn_subs;
 
                 $this->callListener(ON_OPERATION, [$data, $this->rootValue, $this->context]);
@@ -200,7 +198,6 @@ class SubscriptionsManager
      * @param string $query
      * @param mixed $payload
      * @param array|null $variables
-     *
      * @return array
      */
     private function execute(string $query, $payload = null, ?array $variables = null): array
@@ -208,42 +205,6 @@ class SubscriptionsManager
         return GraphQL::executeQuery($this->schema, $query, $payload, $this->context, $variables)->toArray(debugging());
     }
 
-    /**
-     * @param DocumentNode $document
-     * @return string
-     */
-    /**
-     * @param DocumentNode $document
-     * @return string
-     */
-    /**
-     * @param DocumentNode $document
-     * @return string
-     */
-    /**
-     * @param DocumentNode $document
-     * @return string
-     */
-    /**
-     * @param DocumentNode $document
-     * @return string
-     */
-    /**
-     * @param DocumentNode $document
-     * @return string
-     */
-    /**
-     * @param DocumentNode $document
-     * @return string
-     */
-    /**
-     * @param DocumentNode $document
-     * @return string
-     */
-    /**
-     * @param DocumentNode $document
-     * @return string
-     */
     /**
      * @param DocumentNode $document
      * @return string
@@ -270,7 +231,7 @@ class SubscriptionsManager
         /** @var array<array>|null $subscriptions */
         $subscriptions = array_get($this->subscriptions, $subs_name);
 
-        if (is_null($subscriptions)) {
+        if ($subscriptions === null) {
             return;
         }
 
@@ -331,9 +292,9 @@ class SubscriptionsManager
         /** @var array<string, mixed> $conn_subs */
         $conn_subs = $this->connStorage[$conn->key()];
         /** @var array|null $subscription */
-        $subscription = array_get($conn_subs, strval($data['id']));
+        $subscription = array_get($conn_subs, (string)$data['id']);
 
-        if (!is_null($subscription)) {
+        if ($subscription !== null) {
             /** @var string subscription_name */
             $subscription_name = $subscription['name'];
             /** @var int|string $subscription_index */

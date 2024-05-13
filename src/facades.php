@@ -6,6 +6,16 @@
 
 declare(strict_types=1);
 
+namespace Siler\Config;
+const readers = '\Siler\Config\readers';
+const processors = '\Siler\Config\processors';
+const config = '\Siler\Config\config';
+const load = '\Siler\Config\load';
+const has = '\Siler\Config\has';
+const all = '\Siler\Config\all';
+const yaml = '\Siler\Config\yaml';
+
+
 namespace Siler\Container;
 const get = '\Siler\Container\get';
 const set = '\Siler\Container\set';
@@ -42,6 +52,7 @@ namespace Siler\Env;
 const env_var = '\Siler\Env\env_var';
 const env_int = '\Siler\Env\env_int';
 const env_bool = '\Siler\Env\env_bool';
+const env_has = '\Siler\Env\env_has';
 
 
 namespace Siler\File;
@@ -58,7 +69,7 @@ const equal = '\Siler\Functional\equal';
 const less_than = '\Siler\Functional\less_than';
 const greater_than = '\Siler\Functional\greater_than';
 const if_else = '\Siler\Functional\if_else';
-const match = '\Siler\Functional\match';
+const matching = '\Siler\Functional\matching';
 const any = '\Siler\Functional\any';
 const all = '\Siler\Functional\all';
 const not = '\Siler\Functional\not';
@@ -95,11 +106,25 @@ const lconcat = '\Siler\Functional\lconcat';
 const ljoin = '\Siler\Functional\ljoin';
 const filter = '\Siler\Functional\filter';
 const lfilter = '\Siler\Functional\lfilter';
+const even = '\Siler\Functional\even';
+const odd = '\Siler\Functional\odd';
+const find = '\Siler\Functional\find';
+const lfind = '\Siler\Functional\lfind';
+const sort = '\Siler\Functional\sort';
+const lsort = '\Siler\Functional\lsort';
+const first = '\Siler\Functional\first';
+const lfirst = '\Siler\Functional\lfirst';
+const sum = '\Siler\Functional\sum';
+const fold = '\Siler\Functional\fold';
 
 
 namespace Siler\Functional\Monad;
 const identity = '\Siler\Functional\Monad\identity';
 const maybe = '\Siler\Functional\Monad\maybe';
+
+
+namespace Siler\GraphQL;
+const graphiql = '\Siler\GraphQL\graphiql';
 
 
 namespace Siler\GraphQL;
@@ -120,6 +145,7 @@ const subscriptions_at = '\Siler\GraphQL\subscriptions_at';
 const publish = '\Siler\GraphQL\publish';
 const listen = '\Siler\GraphQL\listen';
 const annotated = '\Siler\GraphQL\annotated';
+const validation_rules = '\Siler\GraphQL\validation_rules';
 
 
 namespace Siler\Grpc;
@@ -158,13 +184,14 @@ const accepted_locales = '\Siler\Http\Request\accepted_locales';
 const recommended_locale = '\Siler\Http\Request\recommended_locale';
 const bearer = '\Siler\Http\Request\bearer';
 const authorization_header = '\Siler\Http\Request\authorization_header';
+const user_agent = '\Siler\Http\Request\user_agent';
 
 
 namespace Siler\Http\Response;
 const output = '\Siler\Http\Response\output';
 const text = '\Siler\Http\Response\text';
 const html = '\Siler\Http\Response\html';
-const jsonstr = '\Siler\Http\Response\jsonstr';
+const json_str = '\Siler\Http\Response\json_str';
 const json = '\Siler\Http\Response\json';
 const header = '\Siler\Http\Response\header';
 const redirect = '\Siler\Http\Response\redirect';
@@ -187,8 +214,10 @@ const mailer = '\Siler\SwiftMailer\mailer';
 namespace Siler\Monolog;
 const stream = '\Siler\Monolog\stream';
 const log = '\Siler\Monolog\log';
+const log_if = '\Siler\Monolog\log_if';
 const handler = '\Siler\Monolog\handler';
 const debug = '\Siler\Monolog\debug';
+const debug_if = '\Siler\Monolog\debug_if';
 const info = '\Siler\Monolog\info';
 const notice = '\Siler\Monolog\notice';
 const warning = '\Siler\Monolog\warning';
@@ -200,6 +229,13 @@ const emergency = '\Siler\Monolog\emergency';
 
 namespace Siler\Arr;
 const set = '\Siler\Arr\set';
+const assoc = '\Siler\Arr\assoc';
+
+
+namespace Siler\IO;
+const println = '\Siler\IO\println';
+const csv_to_array = '\Siler\IO\csv_to_array';
+const fetch = '\Siler\IO\fetch';
 
 
 namespace Siler\Klass;
@@ -208,6 +244,10 @@ const unqualified_name = '\Siler\Klass\unqualified_name';
 
 namespace Siler\Obj;
 const patch = '\Siler\Obj\patch';
+
+
+namespace Siler\Prelude;
+const collect = '\Siler\Prelude\collect';
 
 
 namespace Siler\Str;
@@ -222,17 +262,12 @@ const mb_ucfirst = '\Siler\Str\mb_ucfirst';
 const mb_lcfirst = '\Siler\Str\mb_lcfirst';
 
 
-namespace Siler\Tuple;
-const tuple = '\Siler\Tuple\tuple';
+namespace Siler\Prelude;
+const tuple = '\Siler\Prelude\tuple';
 
 
 namespace Siler\Ratchet;
 const graphql_subscriptions = '\Siler\Ratchet\graphql_subscriptions';
-
-
-namespace Siler\Result;
-const success = '\Siler\Result\success';
-const failure = '\Siler\Result\failure';
 
 
 namespace Siler\Route;
@@ -253,7 +288,7 @@ const stop_propagation = '\Siler\Route\stop_propagation';
 const cancel = '\Siler\Route\cancel';
 const canceled = '\Siler\Route\canceled';
 const resume = '\Siler\Route\resume';
-const match = '\Siler\Route\match';
+const matching = '\Siler\Route\matching';
 const did_match = '\Siler\Route\did_match';
 const purge_match = '\Siler\Route\purge_match';
 const base = '\Siler\Route\base';

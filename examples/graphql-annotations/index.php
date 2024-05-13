@@ -2,26 +2,15 @@
 
 namespace Siler\Example\GraphQL\Annotation;
 
-use Siler\GraphQL\DateTimeScalar;
-use function Siler\GraphQL\{annotated, debug, init};
+use Siler\Route;
+use function Siler\GraphQL\{debug, init, subscriptions_at};
 
 require_once __DIR__ . '/../../vendor/autoload.php';
 require_once __DIR__ . '/vendor/autoload.php';
 
-$schema = annotated([
-    Upper::class,
-    Foo::class,
-    Bar::class,
-    FooBar::class,
-    TodoStatus::class,
-    ITodo::class,
-    Todo::class,
-    TupleInput::class,
-    Query::class,
-    Mutation::class,
-], [
-    new DateTimeScalar(),
-]);
+$schema = require __DIR__ . '/schema.php';
 
 debug();
-init($schema);
+subscriptions_at('ws://localhost:3000');
+
+Route\post('/graphql', fn() => init($schema));

@@ -23,9 +23,10 @@ use Swoole\WebSocket\Frame;
 use Swoole\WebSocket\Server as WebsocketServer;
 use Throwable;
 use function Siler\array_get;
+use function Siler\GraphQL\debugging;
 use function Siler\GraphQL\execute;
 use function Siler\GraphQL\request as graphql_request;
-use const Siler\GraphQL\{GQL_DATA, GRAPHQL_DEBUG, WEBSOCKET_SUB_PROTOCOL};
+use const Siler\GraphQL\{GQL_DATA, WEBSOCKET_SUB_PROTOCOL};
 use const Siler\Route\DID_MATCH;
 
 const SWOOLE_HTTP_REQUEST = 'swoole_http_request';
@@ -127,7 +128,10 @@ function response(): Response
  */
 function emit(string $content, int $status = 200, array $headers = []): void
 {
-    if (Container\get(SWOOLE_HTTP_REQUEST_ENDED) === true) {
+    /** @var bool|null $request_ended */
+    $request_ended = Container\get(SWOOLE_HTTP_REQUEST_ENDED);
+
+    if ($request_ended) {
         return;
     }
 
@@ -280,7 +284,7 @@ function broadcast(string $message): void
  *
  * @return void
  */
-function cors(string $origin = '*', string $headers = 'Content-Type, Authorization', string $methods = 'GET, POST, PUT, DELETE'): void
+function cors(string $origin = '*', string $headers = 'Content-Type, Authorization', string $methods = 'GET, POST, PUT, DELETE', string $credentials = 'true'): void
 {
     /** @var Response $response */
     $response = Container\get(SWOOLE_HTTP_RESPONSE);
@@ -288,6 +292,7 @@ function cors(string $origin = '*', string $headers = 'Content-Type, Authorizati
     $response->header('Access-Control-Allow-Origin', $origin);
     $response->header('Access-Control-Allow-Headers', $headers);
     $response->header('Access-Control-Allow-Methods', $methods);
+    $response->header('Access-Control-Allow-Credentials', $credentials);
 
     /** @var Request $request */
     $request = Container\get(SWOOLE_HTTP_REQUEST);
@@ -316,7 +321,7 @@ function raw(): ?string
         return null;
     }
 
-    return strval($content);
+    return (string)$content;
 }
 
 /**
@@ -374,9 +379,9 @@ function graphql_subscriptions(SubscriptionsManager $manager, int $port = 3000, 
          * @psalm-suppress MissingPropertyType
          * @var array<string, string> $message
          */
-        $message = Json\decode(strval($frame->data));
+        $message = Json\decode((string)$frame->data);
         /** @psalm-suppress MissingPropertyType */
-        $handle($message, intval($frame->fd));
+        $handle($message, (int)$frame->fd);
 
         if ($message['type'] === GQL_DATA) {
             /** @var array{id: int} $worker */
@@ -494,18 +499,16 @@ function http_server_port(Server $server, callable $handler, int $port = 80, str
 function graphql_handler(Schema $schema, $root_value = null, $context = null): Closure
 {
     return static function () use ($schema, $root_value, $context): void {
-        $debugging = Container\get(GRAPHQL_DEBUG, 0) > 0;
+        $debug = debugging();
 
         try {
-            $result = execute($schema, graphql_request()->toArray(), $root_value, $context);
+            json(execute($schema, graphql_request()->toArray(), $root_value, $context));
         } catch (Throwable $exception) {
-            if ($debugging) {
+            if ($debug > 0) {
                 Log\debug('GraphQL Internal Error', ['exception' => $exception]);
             }
 
-            $result = FormattedError::createFromException($exception, $debugging);
-        } finally {
-            json($result);
+            json(FormattedError::createFromException($exception, $debug));
         }
     };
 }

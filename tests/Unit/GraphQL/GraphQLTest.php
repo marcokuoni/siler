@@ -1,11 +1,13 @@
 <?php declare(strict_types=1);
 
-namespace Siler\Test\Unit;
+namespace Siler\Test\Unit\GraphQL;
 
-use GraphQL\Error\Debug;
+use GraphQL\Error\DebugFlag;
 use GraphQL\Error\Error;
 use GraphQL\Executor\Promise\Adapter\SyncPromiseAdapter;
 use GraphQL\Type\Schema;
+use GraphQL\Validator\DocumentValidator;
+use GraphQL\Validator\Rules\QueryComplexity;
 use PHPUnit\Framework\TestCase;
 use Siler\Container;
 use Siler\GraphQL;
@@ -93,7 +95,7 @@ class GraphQLTest extends TestCase
     public function testDebug()
     {
         GraphQL\debug();
-        $this->assertSame(Debug::INCLUDE_DEBUG_MESSAGE, Container\get(GraphQL\GRAPHQL_DEBUG));
+        $this->assertSame(DebugFlag::INCLUDE_DEBUG_MESSAGE, Container\get(GraphQL\GRAPHQL_DEBUG));
         GraphQL\debug(0);
     }
 
@@ -104,5 +106,17 @@ class GraphQLTest extends TestCase
         $this->assertSame(1, GraphQL\debugging());
         GraphQL\debug(0);
         $this->assertSame(0, GraphQL\debugging());
+    }
+
+    public function testValidationRules()
+    {
+        $rule = new QueryComplexity(10);
+
+        GraphQL\validation_rules([$rule]);
+
+        $all = DocumentValidator::allRules();
+
+        $this->assertArrayHasKey(QueryComplexity::class, $all);
+        $this->assertContains($rule, $all);
     }
 }

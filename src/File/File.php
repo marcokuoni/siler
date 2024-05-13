@@ -13,12 +13,11 @@ use function Siler\Functional\concat;
  *
  * @param string $dirname
  * @param string $regex
- * @param int $mode
- *
+ * @param RegexIterator::MATCH|RegexIterator::GET_MATCH|RegexIterator::ALL_MATCHES|RegexIterator::SPLIT|RegexIterator::REPLACE $mode
  * @psalm-return list<SplFileInfo>
  * @return SplFileInfo[]
  */
-function recursively_iterated_directory(string $dirname, string $regex = '/.*/', $mode = RegexIterator::MATCH): array
+function recursively_iterated_directory(string $dirname, string $regex = '/.*/', int $mode = RegexIterator::MATCH): array
 {
     $dir_iterator = new RecursiveDirectoryIterator($dirname);
     $iterator = new RecursiveIteratorIterator($dir_iterator);
@@ -39,12 +38,11 @@ function recursively_iterated_directory(string $dirname, string $regex = '/.*/',
  *
  * @param string $dirname
  * @param string $regex
- * @param int $mode
- *
+ * @param RegexIterator::MATCH|RegexIterator::GET_MATCH|RegexIterator::ALL_MATCHES|RegexIterator::SPLIT|RegexIterator::REPLACE $mode
  * @psalm-return list<SplFileInfo>
  * @return SplFileInfo[]
  */
-function recur_iter_dir(string $dirname, string $regex = '/.*/', $mode = RegexIterator::MATCH): array
+function recur_iter_dir(string $dirname, string $regex = '/.*/', int $mode = RegexIterator::MATCH): array
 {
     return recursively_iterated_directory($dirname, $regex, $mode);
 }
@@ -59,8 +57,34 @@ function recur_iter_dir(string $dirname, string $regex = '/.*/', $mode = RegexIt
  */
 function concat_files(array $files, string $separator = "\n"): string
 {
-    $files = array_filter($files, 'is_file');
-    $files = array_map('file_get_contents', $files);
+    $files = array_filter(
+        $files,
+        /**
+         * @param string|SplFileInfo $file
+         * @return bool
+         */
+        static function ($file): bool {
+            if ($file instanceof SplFileInfo) {
+                $file->isFile();
+            }
+
+            return is_file((string)$file);
+        }
+    );
+
+    $files = array_map(
+    /**
+     * @param string|SplFileInfo $file
+     */
+        static function ($file): string {
+            if ($file instanceof SplFileInfo) {
+                return file_get_contents($file->getPathname());
+            }
+
+            return file_get_contents($file);
+        },
+        $files
+    );
 
     $contents = array_reduce($files, concat($separator), '');
 
@@ -74,5 +98,5 @@ function concat_files(array $files, string $separator = "\n"): string
  */
 function join_dir(...$segments): string
 {
-    return join(DIRECTORY_SEPARATOR, $segments);
+    return implode(DIRECTORY_SEPARATOR, $segments);
 }

@@ -8,21 +8,17 @@ namespace Siler;
 use Closure;
 use UnexpectedValueException;
 
-const ARRAY_GET_ERROR_MESSAGE = "Key (%s) not found in array and no default was provided.";
+const ARRAY_GET_ERROR_MESSAGE = 'Key (%s) not found in array and no default was provided.';
 
 /**
  * Get a value from an array checking if the key exists and returning a default value if not.
  *
  * @template T
- * @param array<array-key, mixed>|null $array
- * @psalm-param array<array-key, T>|null $array
+ * @param array<array-key, T>|null $array
  * @param array-key|null $key The key to be searched
- * @param mixed|null $default The default value to be returned when the key don't exists
- * @psalm-param T|null $default The default value to be returned when the key don't exists
+ * @param T $default The default value to be returned when the key don't exists
  * @param bool $caseInsensitive Ignore key case, default false
- * @return mixed|null|array<array-key, mixed>
- * @psalm-return T|null|array<string, T>
- * @psalm-suppress LessSpecificReturnType
+ * @return T|null|array<string, T>
  */
 function array_get(?array $array, $key = null, $default = null, bool $caseInsensitive = false)
 {
@@ -34,13 +30,12 @@ function array_get(?array $array, $key = null, $default = null, bool $caseInsens
         return $array;
     }
 
-    if ($caseInsensitive && is_string($key)) {
-        /** @psalm-suppress MixedArgumentTypeCoercion */
-        $array = array_change_key_case($array);
+    if ($caseInsensitive && \is_string($key)) {
+        $array = \array_change_key_case($array);
         $key = strtolower($key);
     }
 
-    return array_key_exists($key, $array) ? $array[$key] : $default;
+    return \array_key_exists($key, $array) ? $array[$key] : $default;
 }
 
 /**
@@ -55,6 +50,7 @@ function array_get(?array $array, $key = null, $default = null, bool $caseInsens
  */
 function array_get_str(array $array, string $key, ?string $default = null): string
 {
+    /** @var mixed|null $value */
     $value = array_get($array, $key);
 
     if ($value === null && $default === null) {
@@ -65,7 +61,7 @@ function array_get_str(array $array, string $key, ?string $default = null): stri
         return $default;
     }
 
-    return strval($value);
+    return (string)$value;
 }
 
 /**
@@ -195,12 +191,7 @@ function require_fn(string $filename): Closure
             }
 
             /** @var mixed $value */
-            $value = Container\get($filename);
-
-            if (is_callable($value)) {
-                return call_user_func($value, $params);
-            }
-
+            $value = Container\get($filename, null, [$params]);
             return $value;
         };
 }

@@ -5,6 +5,7 @@ namespace Siler\Test\Unit\Env;
 use PHPUnit\Framework\TestCase;
 use UnexpectedValueException;
 use function Siler\Env\env_bool;
+use function Siler\Env\env_has;
 use function Siler\Env\env_int;
 use function Siler\Env\env_var;
 
@@ -12,7 +13,7 @@ class EnvTest extends TestCase
 {
     public function testEnvVar()
     {
-        putenv('FOO=bar');
+        $_ENV['FOO'] = 'bar';
         $this->assertSame('bar', env_var('FOO'));
     }
 
@@ -29,7 +30,7 @@ class EnvTest extends TestCase
 
     public function testEnvInt()
     {
-        putenv('FOO=42');
+        $_ENV['FOO'] = '42';
         $this->assertSame(42, env_int('FOO'));
     }
 
@@ -40,10 +41,17 @@ class EnvTest extends TestCase
 
     public function testEnvBool()
     {
-        putenv('FOO=true');
+        $_ENV['FOO'] = 'true';
         $this->assertSame(true, env_bool('FOO'));
 
-        putenv('FOO=false');
+        $_ENV['FOO'] = 'false';
         $this->assertSame(false, env_bool('FOO'));
+    }
+
+    public function testEnvHas()
+    {
+        $_ENV['FOO'] = 'bar';
+        $this->assertTrue(env_has('FOO'));
+        $this->assertFalse(env_has('BAR'));
     }
 }

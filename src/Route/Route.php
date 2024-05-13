@@ -5,7 +5,16 @@
 
 namespace Siler\Route;
 
+use InvalidArgumentException;
 use Psr\Http\Message\ServerRequestInterface;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
+use RecursiveRegexIterator;
+use ReflectionClass;
+use ReflectionException;
+use ReflectionMethod;
+use ReflectionParameter;
+use RegexIterator;
 use Siler\Container;
 use Siler\Http;
 use Siler\Http\Request;
@@ -105,7 +114,7 @@ function any(string $path, $callback, $request = null)
 /**
  * Define a new route.
  *
- * @param string|array $method The HTTP request method to listen on
+ * @param string|string[] $method The HTTP request method to listen on
  * @param string $path The HTTP URI to listen on
  * @param string|callable $callback The callable to be executed or a string to be used with Siler\require_fn
  * @param array{0: string, 1: string}|ServerRequestInterface|null $request
@@ -189,6 +198,7 @@ function regexify(string $path): string
     ];
 
     $path = preg_replace(array_keys($patterns), array_values($patterns), $path);
+
     /** @var string $base */
     $base = Container\get(BASE_PATH, '');
 
@@ -210,7 +220,7 @@ function resource(string $base_path, string $resources_path, ?string $identity_p
     $base_path = '/' . trim($base_path, '/');
     $resources_path = rtrim($resources_path, '/');
 
-    if (is_null($identity_param)) {
+    if ($identity_param === null) {
         $identity_param = 'id';
     }
 
@@ -251,7 +261,7 @@ function resource(string $base_path, string $resources_path, ?string $identity_p
         /** @var mixed $result */
         $result = $route();
 
-        if (!is_null($result)) {
+        if ($result !== null) {
             return $result;
         }
     }
@@ -306,31 +316,30 @@ function files(string $basePath, string $prefix = '', $request = null)
     $realpath = realpath($basePath);
 
     if (false === $realpath) {
-        throw new \InvalidArgumentException("{$basePath} does not exists");
+        throw new InvalidArgumentException("{$basePath} does not exists");
     }
 
-    $directory = new \RecursiveDirectoryIterator($realpath);
-    $iterator = new \RecursiveIteratorIterator($directory);
-    $regex = new \RegexIterator($iterator, '/^.+\.php$/i', \RecursiveRegexIterator::GET_MATCH);
+    $directory = new RecursiveDirectoryIterator($realpath);
+    $iterator = new RecursiveIteratorIterator($directory);
+    $regex = new RegexIterator($iterator, '/^.+\.php$/i', RecursiveRegexIterator::GET_MATCH);
 
     $files = array_keys(iterator_to_array($regex));
 
     sort($files);
 
-    $cut = strlen($realpath);
+    $cut = \strlen($realpath);
     $prefix = rtrim($prefix, '/');
 
     foreach ($files as $filename) {
-        $cut_filename = substr((string)$filename, $cut);
+        $cut_filename = substr((string) $filename, $cut);
 
-        if (false === $cut_filename) {
+        if ($cut_filename === false) {
             continue;
         }
 
-        /** @var string $method */
-        list($method, $path) = routify($cut_filename);
+        [$method, $path] = routify($cut_filename);
 
-        if ('/' === $path) {
+        if ($path === '/') {
             if ($prefix) {
                 $path = $prefix;
             }
@@ -338,8 +347,8 @@ function files(string $basePath, string $prefix = '', $request = null)
             $path = $prefix . $path;
         }
 
-        /** @var mixed|null $result */
-        $result = route($method, $path, (string)$filename, $request);
+        /** @var mixed $result */
+        $result = route($method, $path, (string) $filename, $request);
 
         if ($result !== null) {
             return $result;
@@ -357,26 +366,26 @@ function files(string $basePath, string $prefix = '', $request = null)
  * @param array{0: string, 1: string}|ServerRequestInterface|null $request
  *
  * @return void
- * @throws \ReflectionException
+ * @throws ReflectionException
  *
  */
 function class_name(string $basePath, $className, $request = null): void
 {
-    $reflection = new \ReflectionClass($className);
+    $reflection = new ReflectionClass($className);
     $object = $reflection->newInstance();
 
-    $methods = $reflection->getMethods(\ReflectionMethod::IS_PUBLIC);
+    $methods = $reflection->getMethods(ReflectionMethod::IS_PUBLIC);
 
     foreach ($methods as $method) {
         $specs = preg_split('/(?=[A-Z])/', $method->name);
 
-        $path_segments = array_map('strtolower', array_slice($specs, 1));
+        $path_segments = array_map('strtolower', \array_slice($specs, 1));
 
-        $path_segments = array_filter($path_segments, function (string $segment): bool {
-            return $segment != 'index';
+        $path_segments = array_filter($path_segments, static function (string $segment): bool {
+            return $segment !== 'index';
         });
 
-        $path_params = array_map(function (\ReflectionParameter $param) {
+        $path_params = array_map(function (ReflectionParameter $param) {
             $param_name = $param->getName();
             $param_name = "{{$param_name}}";
 
@@ -393,7 +402,7 @@ function class_name(string $basePath, $className, $request = null): void
 
         route(
             $specs[0],
-            join('/', $path_segments),
+            implode('/', $path_segments),
             function (array $params) use ($method, $object) {
                 foreach (array_keys($params) as $key) {
                     if (!is_int($key)) {
@@ -401,7 +410,7 @@ function class_name(string $basePath, $className, $request = null): void
                     }
                 }
 
-                $args = array_slice($params, 1);
+                $args = \array_slice($params, 1);
                 $method->invokeArgs($object, $args);
             },
             $request
@@ -436,7 +445,7 @@ function cancel(): void
  */
 function canceled(): bool
 {
-    return boolval(Container\get(CANCEL, false));
+    return (bool) Container\get(CANCEL, false);
 }
 
 /**
@@ -456,9 +465,8 @@ function resume(): void
  * @param array<mixed|null> $routes The route results to br tested
  * @return mixed|null
  */
-function match(array $routes)
+function matching(array $routes)
 {
-    /** @var mixed|null $route */
     foreach ($routes as $route) {
         if ($route !== null) {
             return $route;
@@ -475,7 +483,7 @@ function match(array $routes)
  */
 function did_match(): bool
 {
-    return boolval(Container\get(DID_MATCH, false));
+    return (bool) Container\get(DID_MATCH, false);
 }
 
 /**

@@ -1,7 +1,7 @@
 {
-    "name": "leocavalcante/siler",
+    "name": "concrete5/siler",
     "type": "library",
-    "description": "Siler is a set of general purpose high-level abstractions aiming an API for declarative programming in PHP.",
+    "description": "Siler is a set of general purpose high-level abstractions aiming an API for declarative programming in PHP. Forked from archived repository on github https://github.com/leocavalcante/siler",
     "keywords": [
         "api",
         "framework",
@@ -19,36 +19,40 @@
         }
     ],
     "require": {
-        "php": ">=7.3"
+        "php": ">=7.3 || >= 8.0"
     },
     "minimum-stability": "stable",
     "require-dev": {
-        "cboden/ratchet": "^0.4.1",
-        "cocur/slugify": "^3.2",
+        "cboden/ratchet": "^0.4.4",
+        "cocur/slugify": "^4.1",
         "doctrine/annotations": "^1.10",
-        "doctrine/cache": "^1.10",
-        "gabordemooij/redbean": "^5.4",
-        "google/protobuf": "^3.11",
-        "grpc/grpc": "^1.25",
-        "laminas/laminas-diactoros": "^2.2",
-        "laminas/laminas-httphandlerrunner": "^1.1",
-        "laminas/laminas-stratigility": "^3.2",
-        "monolog/monolog": "^2.0",
-        "phpunit/phpunit": "^9.0",
-        "squizlabs/php_codesniffer": "^3.5",
-        "swiftmailer/swiftmailer": "^6.2",
-        "swoole/ide-helper": "^4.4",
-        "textalk/websocket": "^1.2",
-        "twig/twig": "^3.0",
-        "vimeo/psalm": "^3.9",
-        "vlucas/phpdotenv": "^3.6",
-        "webonyx/graphql-php": "^0.13"
+        "doctrine/cache": "^2.1",
+        "gabordemooij/redbean": "^5.7",
+        "google/protobuf": "^3.19",
+        "grpc/grpc": "^1.42",
+        "laminas/laminas-config": "^3.7",
+        "laminas/laminas-config-aggregator": "^1.7",
+        "laminas/laminas-diactoros": "^2.8",
+        "laminas/laminas-httphandlerrunner": "^2.1",
+        "laminas/laminas-stratigility": "^3.5",
+        "monolog/monolog": "^2.1",
+        "phpunit/phpunit": "^9.5",
+        "psr/event-dispatcher": "^1.0",
+        "squizlabs/php_codesniffer": "^3.6",
+        "swiftmailer/swiftmailer": "^6.3",
+        "swoole/ide-helper": "^4.6",
+        "textalk/websocket": "^1.5",
+        "twig/twig": "^3.3",
+        "vimeo/psalm": "^4.7.2",
+        "vlucas/phpdotenv": "^5.0",
+        "webonyx/graphql-php": "^14.11"
     },
     "autoload": {
         "psr-4": {
             "Siler\\": "src/"
         },
         "files": [
+            "src/Config/Config.php",
             "src/Container/Container.php",
             "src/Diactoros/Diactoros.php",
             "src/Dotenv/Dotenv.php",
@@ -58,6 +62,7 @@
             "src/Functional/Functional.php",
             "src/Functional/Monad/Monad.php",
             "src/GraphQL/GraphQL.php",
+            "src/GraphQL/GraphiQL.php",
             "src/Grpc/Grpc.php",
             "src/Http/Http.php",
             "src/Http/Request.php",
@@ -66,12 +71,13 @@
             "src/Mail/SwiftMailer.php",
             "src/Monolog/Monolog.php",
             "src/Prelude/Arr.php",
+            "src/Prelude/IO.php",
             "src/Prelude/Klass.php",
             "src/Prelude/Obj.php",
+            "src/Prelude/Prelude.php",
             "src/Prelude/Str.php",
             "src/Prelude/Tuple.php",
             "src/Ratchet/Ratchet.php",
-            "src/Result/Result.php",
             "src/Route/Route.php",
             "src/Stratigility/Stratigility.php",
             "src/Swoole/Swoole.php",
@@ -89,8 +95,13 @@
         "generate-facades": "php bin/generate-facades.php",
         "fix": "phpcbf",
         "lint": "phpcs",
-        "analyze": "psalm --shepherd",
+        "analyze": "psalm --shepherd --no-cache",
         "test": "phpunit",
+        "ci": [
+            "@composer lint",
+            "@composer analyze",
+            "@composer test"
+        ],
         "build": [
             "@composer generate-facades",
             "@composer fix",

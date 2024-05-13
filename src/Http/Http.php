@@ -13,7 +13,7 @@ use function Siler\array_get_str;
  *
  * @param string|null $key
  * @param string|null $default The default value to be returned when the key don't exists
- * @return string|null|array<string, string>
+ * @return array<string, string|null>|null|string
  */
 function cookie(?string $key = null, ?string $default = null)
 {
@@ -26,7 +26,7 @@ function cookie(?string $key = null, ?string $default = null)
  *
  * @param string|null $key
  * @param string|null $default The default value to be returned when the key don't exists
- * @return string|null|array<string, string>
+ * @return string|null|array<string, string|null>
  */
 function session(?string $key = null, ?string $default = null)
 {
@@ -43,7 +43,7 @@ function session(?string $key = null, ?string $default = null)
  */
 function setsession(string $key, $value): void
 {
-    $_SESSION[$key] = strval($value);
+    $_SESSION[$key] = (string)$value;
 }
 
 /**
@@ -58,7 +58,7 @@ function flash(?string $key = null, ?string $default = null)
 {
     $value = session($key, $default);
 
-    if (!is_null($key)) {
+    if ($key !== null) {
         unset($_SESSION[$key]);
     }
 
@@ -84,7 +84,7 @@ function redirect(string $url): void
  */
 function url(?string $path = null): string
 {
-    if (is_null($path)) {
+    if ($path === null) {
         $path = '/';
     }
 
@@ -94,7 +94,7 @@ function url(?string $path = null): string
      */
     $script_name = array_get($_SERVER, 'SCRIPT_NAME', '');
 
-    return rtrim(str_replace('\\', '/', dirname($script_name)), '/') . '/' . ltrim($path, '/');
+    return rtrim(str_replace('\\', '/', \dirname($script_name)), '/') . '/' . ltrim($path, '/');
 }
 
 /**
@@ -104,24 +104,25 @@ function url(?string $path = null): string
  */
 function path(): string
 {
-    /** @var array<string, string> $_SERVER */
+    /** @psalm-var array<string, string> $_SERVER */
     $script_name = array_get_str($_SERVER, 'SCRIPT_NAME', '');
-    $query_string = array_get_str($_SERVER, 'QUERY_STRING', '');
     $request_uri = array_get_str($_SERVER, 'REQUEST_URI', '');
 
     // NOTE: When using built-in server with a router script, SCRIPT_NAME will be same as the REQUEST_URI
-    if (php_sapi_name() === 'cli-server') {
+    if (PHP_SAPI === 'cli-server') {
         $script_name = '';
     }
 
-    $request_uri = str_replace('?' . $query_string, '', $request_uri);
-    $script_path = str_replace('\\', '/', dirname($script_name));
+    $query_string = strpos($request_uri, '?');
+    $request_uri = $query_string === false ? $request_uri : substr($request_uri, 0, $query_string);
+    $request_uri = rawurldecode($request_uri);
+    $script_path = str_replace('\\', '/', \dirname($script_name));
 
-    if (!strlen(str_replace('/', '', $script_path))) {
+    if (str_replace('/', '', $script_path) === '') {
         return '/' . ltrim($request_uri, '/');
-    } else {
-        return '/' . ltrim(preg_replace("#^$script_path#", '', $request_uri, 1), '/');
     }
+
+    return '/' . ltrim(preg_replace("#^$script_path#", '', $request_uri, 1), '/');
 }
 
 /**
@@ -132,13 +133,12 @@ function path(): string
  */
 function uri(?string $protocol = null): string
 {
-    /**
-     * @var array<string, string> $_SERVER
-     * @var string $https
-     */
-    $https = array_get($_SERVER, 'HTTPS', '');
-
     if ($protocol === null) {
+        /**
+         * @var array<string, string> $_SERVER
+         * @var string $https
+         */
+        $https = array_get($_SERVER, 'HTTPS', '');
         $protocol = empty($https) ? 'http' : 'https';
     }
 

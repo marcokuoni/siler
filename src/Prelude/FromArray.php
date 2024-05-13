@@ -2,22 +2,23 @@
 
 namespace Siler\Prelude;
 
+use ReflectionObject;
 use function Siler\Str\snake_case;
 
 /**
- * Trait FromArray
- * @package Siler\Prelude
+ * @template T
  */
 trait FromArray
 {
     /**
      * @param array $arr
-     * @return static
+     * @return mixed
+     * @psalm-return T
      */
-    public static function fromArray(array $arr): self
+    public static function fromArray(array $arr)
     {
-        $obj = new static();
-        $reflection = new \ReflectionObject($obj);
+        $obj = new self();
+        $reflection = new ReflectionObject($obj);
 
         foreach ($reflection->getProperties() as $prop) {
             $prop_name = $prop->getName();

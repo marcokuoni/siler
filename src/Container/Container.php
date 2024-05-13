@@ -5,18 +5,35 @@ namespace Siler\Container;
 use OverflowException;
 use UnderflowException;
 use function Siler\array_get;
+use function Siler\Functional\call;
 
 /**
  * Get a value from the container.
  *
+ * @template T
  * @param string $key The key to be searched on the container
  * @param mixed $default Default value when the key does not exists on the container
- * @return mixed|null
+ * @param array $args If the given value is callable it will be automatically called with this arguments
+ * @param bool $reusable Whether value should be called every time or just once
+ * @psalm-param T $default Default value when the key does not exists on the container
+ * @psalm-return T
  */
-function get(string $key, $default = null)
+function get(string $key, $default = null, array $args = [], bool $reusable = true)
 {
     $container = Container::getInstance();
-    return array_get($container->values, $key, $default);
+    /** @psalm-var T|callable(mixed...):T $value */
+    $value = array_get($container->values, $key, $default);
+
+    if (is_callable($value)) {
+        /** @var callable(mixed...):T $callable_value */
+        $callable_value = $value;
+        $value = call($callable_value, ...$args);
+        if ($reusable) {
+            set($key, $value);
+        }
+    }
+
+    return $value;
 }
 
 /**
@@ -77,10 +94,13 @@ function inject(string $serviceName, $service): void
  * Sugar for Container\get that throws an UnderflowException when the key isn't initialized.
  * Useful for dependency injection/IoC.
  *
+ * @template T
  * @param string $serviceName
+ * @param bool $reusable
  * @return mixed
+ * @psalm-return T
  */
-function retrieve(string $serviceName)
+function retrieve(string $serviceName, bool $reusable = true)
 {
     $container = Container::getInstance();
 
@@ -88,7 +108,19 @@ function retrieve(string $serviceName)
         throw new UnderflowException("$serviceName not initialized");
     }
 
-    return $container->values[$serviceName];
+    /** @psalm-var T|callable(mixed...):T $service */
+    $service = $container->values[$serviceName];
+
+    if (is_callable($service)) {
+        /** @var callable(mixed...):T $callable_service */
+        $callable_service = $service;
+        $service = call($callable_service);
+        if ($reusable) {
+            set($serviceName, $service);
+        }
+    }
+
+    return $service;
 }
 
 /**

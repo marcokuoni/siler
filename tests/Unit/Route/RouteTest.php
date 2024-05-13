@@ -1,14 +1,11 @@
-<?php
+<?php declare(strict_types=1);
 
-declare(strict_types=1);
-
-namespace Siler\Test\Unit;
+namespace Siler\Test\Unit\Route;
 
 use Laminas\Diactoros\ServerRequest;
 use PHPUnit\Framework\TestCase;
 use Siler\Container;
 use Siler\Route;
-use Siler\Test\Unit\Route\SwooleHttpRequestMock;
 use function Siler\Functional\always;
 use const Siler\Swoole\SWOOLE_HTTP_REQUEST;
 
@@ -225,10 +222,10 @@ class RouteTest extends TestCase
     public function testMatch()
     {
         $routes = [null, false];
-        $this->assertFalse(Route\match($routes));
+        $this->assertFalse(Route\matching($routes));
 
         $routes = [null, null];
-        $this->assertNull(Route\match($routes));
+        $this->assertNull(Route\matching($routes));
     }
 
     /**
@@ -267,6 +264,15 @@ class RouteTest extends TestCase
         $result = Route\get('/bar/baz', always('foo'));
         $this->assertTrue(Route\canceled());
         $this->assertNull($result);
+    }
+
+    public function testUrlEncodedQueryString()
+    {
+        $_SERVER['REQUEST_URI'] = '/bar/baz?filters%5Bstate%5D=2';
+        $_SERVER['QUERY_STRING'] = 'filters%5Bstate%5D=2';
+
+        $actual = Route\get('/bar/baz', always('foo'));
+        $this->assertSame('foo', $actual);
     }
 
     protected function setUp(): void

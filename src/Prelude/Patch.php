@@ -5,17 +5,17 @@ namespace Siler\Prelude;
 use function Siler\Obj\patch;
 
 /**
- * OO interface for `Obj/patch`.
- * @package Siler\Prelude
+ * @template T
  */
 trait Patch
 {
     /**
-     * @param array $arr
-     * @return $this
+     * @param array $data
+     * @return mixed
+     * @psalm-return T
      */
-    public function patch(array $arr): self
+    public function patch(array $data)
     {
-        return patch($this, $arr);
+        return patch($this, $data);
     }
 }
